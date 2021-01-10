@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootViewResult"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/bgInfoWorkout">
+
+    <TextView
+        android:id="@+id/tvStartTimeTitle"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:text="@string/txt_start" />
+
+    <TextView
+        android:id="@+id/tvStartTime"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/margin_default"
+        android:layout_toEndOf="@id/tvStartTimeTitle" />
+
+    <TextView
+        android:id="@+id/tvFinishTimeTitle"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvStartTimeTitle"
+        android:text="@string/txt_finish" />
+
+    <TextView
+        android:id="@+id/tvFinishTime"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvStartTime"
+        android:layout_marginStart="@dimen/margin_default"
+        android:layout_toEndOf="@id/tvFinishTimeTitle" />
+
+    <TextView
+        android:id="@+id/tvDistanceTitle"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvFinishTimeTitle"
+        android:text="@string/txt_distance" />
+
+    <TextView
+        android:id="@+id/tvDistance"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvFinishTime"
+        android:layout_marginStart="@dimen/margin_default"
+        android:layout_toEndOf="@id/tvDistanceTitle" />
+
+    <TextView
+        android:id="@+id/tvAvgSpeedTitle"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvDistanceTitle"
+        android:text="@string/txt_avg_speed" />
+
+    <TextView
+        android:id="@+id/tvAvgSpeed"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvDistance"
+        android:layout_marginStart="@dimen/margin_default"
+        android:layout_toEndOf="@id/tvAvgSpeedTitle" />
+</RelativeLayout>

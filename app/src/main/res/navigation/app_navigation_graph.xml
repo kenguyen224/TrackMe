@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/app_navigation_graph"
+    app:startDestination="@id/historyWorkoutFragment">
+
+    <fragment
+        android:id="@+id/historyWorkoutFragment"
+        android:name="com.example.kenv.trackme.presentation.fragment.HistoryWorkoutFragment"
+        android:label="HistoryWorkoutFragment" >
+        <action
+            android:id="@+id/startWorkoutReviewActivity"
+            app:destination="@id/workoutReviewActivity" />
+    </fragment>
+
+    <activity
+        android:id="@+id/workoutTrackingActivity"
+        android:name="com.example.kenv.trackme.presentation.activity.WorkoutRecordingActivity"
+        android:label="activity_workout_tracking"
+        tools:layout="@layout/activity_workout_recording" />
+
+    <action
+        android:id="@+id/action_start_recording"
+        app:destination="@id/workoutTrackingActivity" />
+
+    <activity
+        android:id="@+id/workoutReviewActivity"
+        android:name="com.example.kenv.trackme.presentation.activity.WorkoutReviewActivity"
+        android:label="WorkoutReviewActivity" >
+        <argument
+            android:name="workout_review_argument"
+            app:argType="com.example.kenv.trackme.presentation.arguments.WorkoutReviewArgument" />
+    </activity>
+
+</navigation>
