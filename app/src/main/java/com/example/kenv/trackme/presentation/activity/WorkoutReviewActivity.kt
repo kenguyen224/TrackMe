@@ -67,10 +67,10 @@ class WorkoutReviewActivity : AppCompatActivity(), OnMapReadyCallback {
                 )
             })
         }
-        loadWorkoutInfo()
+        showWorkoutInfo()
     }
 
-    private fun loadWorkoutInfo() {
+    private fun showWorkoutInfo() {
         with(viewBinding.viewResult) {
             root.show(true)
             tvStartTime.text = args.workoutReviewArgument.startTime

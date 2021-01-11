@@ -5,7 +5,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.kenv.trackme.data.local.WorkoutStorage
 import com.example.kenv.trackme.domain.coroutine.CoroutineDispatcherProvider
 import com.example.kenv.trackme.domain.entity.WorkoutEntity
 import com.example.kenv.trackme.domain.usecases.GetWorkoutsUseCase
@@ -19,7 +18,6 @@ import kotlinx.coroutines.launch
 
 class ListWorkoutViewModel(
     private val getWorkoutsUseCase: GetWorkoutsUseCase,
-    private val storage: WorkoutStorage,
     private val coroutineDispatcherProvider: CoroutineDispatcherProvider
 ) : ViewModel() {
 

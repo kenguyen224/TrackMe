@@ -39,15 +39,17 @@ class WorkoutRecordingActivity : AppCompatActivity(),
         val mapFragment: SupportMapFragment? =
             supportFragmentManager.findFragmentById(R.id.mapFragment) as? SupportMapFragment
         mapFragment?.getMapAsync(recordWorkoutViewModel)
-        viewBinding.btnStartRecord.setOnClickListener {
-            recordWorkoutViewModel.onStartRecord()
-        }
-        viewBinding.btnFinish.setOnClickListener {
-            finish()
-        }
-        viewBinding.btnStopRecord.setOnClickListener {
-            viewBinding.btnStopRecord.show(false)
-            recordWorkoutViewModel.onStopRecording()
+        with(viewBinding) {
+            btnStartRecord.setOnClickListener {
+                recordWorkoutViewModel.onStartRecord()
+            }
+            btnFinish.setOnClickListener {
+                finish()
+            }
+            btnStopRecord.setOnClickListener {
+                viewBinding.btnStopRecord.show(false)
+                recordWorkoutViewModel.onStopRecording()
+            }
         }
         bindViewModel()
     }

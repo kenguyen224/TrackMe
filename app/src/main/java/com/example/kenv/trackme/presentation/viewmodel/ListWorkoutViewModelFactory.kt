@@ -6,7 +6,6 @@ import androidx.lifecycle.AbstractSavedStateViewModelFactory
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.savedstate.SavedStateRegistryOwner
-import com.example.kenv.trackme.data.local.WorkoutStorage
 import com.example.kenv.trackme.domain.coroutine.CoroutineDispatcherProvider
 import com.example.kenv.trackme.domain.usecases.GetWorkoutsUseCase
 import javax.inject.Inject
@@ -19,7 +18,6 @@ import javax.inject.Inject
 class ListWorkoutViewModelFactory @Inject constructor(
     activity: Activity,
     private val getWorkoutsUseCase: GetWorkoutsUseCase,
-    private val storage: WorkoutStorage,
     private val coroutineDispatcherProvider: CoroutineDispatcherProvider
 ) : AbstractSavedStateViewModelFactory(
     activity as SavedStateRegistryOwner, Bundle.EMPTY
@@ -32,6 +30,6 @@ class ListWorkoutViewModelFactory @Inject constructor(
         require(modelClass == ListWorkoutViewModel::class.java) {
             "Invalid viewModel class: ${modelClass.simpleName}"
         }
-        return ListWorkoutViewModel(getWorkoutsUseCase, storage, coroutineDispatcherProvider) as T
+        return ListWorkoutViewModel(getWorkoutsUseCase, coroutineDispatcherProvider) as T
     }
 }
