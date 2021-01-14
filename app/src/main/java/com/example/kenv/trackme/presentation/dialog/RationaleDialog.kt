@@ -1,6 +1,5 @@
 package com.example.kenv.trackme.presentation.dialog
 
-import android.Manifest
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.DialogInterface
@@ -17,7 +16,6 @@ import com.example.kenv.trackme.R
  * A dialog that explains the use of the location permission and requests the necessary
  * permission.
  *
- *
  * The activity should implement
  * [androidx.core.app.ActivityCompat.OnRequestPermissionsResultCallback]
  * to handle permit or denial of this permission request.
@@ -27,14 +25,14 @@ class RationaleDialog : DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val requestCode =
             arguments?.getInt(ARGUMENT_PERMISSION_REQUEST_CODE) ?: 0
-        finishActivity =
-            arguments?.getBoolean(ARGUMENT_FINISH_ACTIVITY) ?: false
+        val permission = arguments?.getStringArray(ARG_PERMISSION_LIST)
+            ?: throw IllegalArgumentException("[TrackMe] Invalid permission request rationale dialog")
         return AlertDialog.Builder(activity)
             .setMessage(R.string.permission_rationale_location)
             .setPositiveButton(android.R.string.ok) { _, _ -> // After click on Ok, request the permission.
                 ActivityCompat.requestPermissions(
                     requireActivity(),
-                    arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
+                    permission,
                     requestCode
                 )
                 // Do not finish the Activity while requesting permission.
@@ -58,11 +56,11 @@ class RationaleDialog : DialogFragment() {
 
     companion object {
         private const val ARGUMENT_PERMISSION_REQUEST_CODE = "requestCode"
-        private const val ARGUMENT_FINISH_ACTIVITY = "finish"
-        fun newInstance(requestCode: Int, finishActivity: Boolean): RationaleDialog {
+        const val ARG_PERMISSION_LIST = "list_permission"
+        fun newInstance(requestCode: Int, permission: List<String>): RationaleDialog {
             val arguments = Bundle().apply {
                 putInt(ARGUMENT_PERMISSION_REQUEST_CODE, requestCode)
-                putBoolean(ARGUMENT_FINISH_ACTIVITY, finishActivity)
+                putStringArray(ARG_PERMISSION_LIST, permission.toTypedArray())
             }
             return RationaleDialog().apply {
                 this.arguments = arguments

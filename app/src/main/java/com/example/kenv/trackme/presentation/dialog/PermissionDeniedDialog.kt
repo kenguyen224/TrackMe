@@ -15,10 +15,7 @@ import com.example.kenv.trackme.R
  * A dialog that displays a permission denied message.
  */
 class PermissionDeniedDialog : DialogFragment() {
-    private var finishActivity = false
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        finishActivity =
-            arguments?.getBoolean(ARGUMENT_FINISH_ACTIVITY) ?: false
         return AlertDialog.Builder(activity)
             .setMessage(R.string.location_permission_denied)
             .setPositiveButton(android.R.string.ok, null)
@@ -27,27 +24,16 @@ class PermissionDeniedDialog : DialogFragment() {
 
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
-        if (finishActivity) {
-            Toast.makeText(
-                activity, R.string.permission_required_toast,
-                Toast.LENGTH_SHORT
-            ).show()
-            activity?.finish()
-        }
+        Toast.makeText(
+            activity, R.string.permission_required_toast,
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     companion object {
-        private const val ARGUMENT_FINISH_ACTIVITY = "finish"
-
-        /**
-         * Creates a new instance of this dialog and optionally finishes the calling Activity
-         * when the 'Ok' button is clicked.
-         */
         @JvmStatic
-        fun newInstance(finishActivity: Boolean): PermissionDeniedDialog {
-            val arguments = Bundle().apply {
-                putBoolean(ARGUMENT_FINISH_ACTIVITY, finishActivity)
-            }
+        fun newInstance(): PermissionDeniedDialog {
+            val arguments = Bundle()
             return PermissionDeniedDialog().apply {
                 this.arguments = arguments
             }

@@ -9,7 +9,6 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.example.kenv.trackme.R
 import com.example.kenv.trackme.databinding.FragmentHistoryWorkoutBinding
 import com.example.kenv.trackme.domain.transform.toLatLng
 import com.example.kenv.trackme.presentation.activity.WorkoutComponentContract
@@ -53,7 +52,7 @@ class HistoryWorkoutFragment : BaseFragment() {
         navController = findNavController()
         workoutAdapter = WorkoutAdapter {
             navController.navigate(
-                HistoryWorkoutFragmentDirections.startWorkoutReviewActivity(
+                HistoryWorkoutFragmentDirections.actionStartWorkoutReviewActivity(
                     WorkoutReviewArgument(
                         it.trackingLocation.toLatLng(),
                         it.startTime,
@@ -71,7 +70,7 @@ class HistoryWorkoutFragment : BaseFragment() {
             addItemDecoration(VerticalSpaceItemDecoration())
         }
         viewBinding.btnRecord.setOnClickListener {
-            navController.navigate(R.id.action_start_recording)
+            navController.navigate(HistoryWorkoutFragmentDirections.actionStartRecording())
         }
         bindViewModel()
     }

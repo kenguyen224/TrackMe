@@ -1,6 +1,7 @@
 package com.example.kenv.trackme.presentation.viewmodel
 
-import android.Manifest
+import android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
@@ -14,9 +15,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.util.Log
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -28,7 +27,6 @@ import com.example.kenv.trackme.domain.entity.WorkoutEntity
 import com.example.kenv.trackme.domain.transform.toLatLngModel
 import com.example.kenv.trackme.domain.usecases.SaveWorkoutUseCase
 import com.example.kenv.trackme.presentation.arguments.WorkoutResult
-import com.example.kenv.trackme.presentation.dialog.PermissionDeniedDialog
 import com.example.kenv.trackme.presentation.extensions.toLatLng
 import com.example.kenv.trackme.presentation.utils.PermissionUtils
 import com.example.kenv.trackme.presentation.utils.formatMeter
@@ -65,7 +63,7 @@ class WorkoutRecordingViewModel(
     private var locationManager: LocationManager =
         activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private lateinit var mMap: GoogleMap
-    private var permissionDenied: Boolean = false
+    private var isLocationPermissionDenied: Boolean = true
     private val drawPosition: MutableList<LatLng> = mutableListOf()
     private lateinit var currentPosition: LatLng
     private lateinit var startTime: Date
@@ -90,11 +88,16 @@ class WorkoutRecordingViewModel(
     private var _showSpeed = MutableLiveData<Float>()
     val showSpeed: LiveData<Float> = _showSpeed
 
+    private var _requestPermission = MutableLiveData<List<String>>()
+    val requestPermission: LiveData<List<String>> = _requestPermission
+
+    private var _permissionDeniedDialog = MutableLiveData<Unit>()
+    val permissionDeniedDialog: LiveData<Unit> = _permissionDeniedDialog
+
     private var avgSpeed: Float = 0f
 
     fun onStopRecording() {
         isRecording = false
-        //mockLocation()
         getWorkManagerInstance().cancelAllWorkByTag(RECORDING_WORKER_TAG)
         finishTime = Calendar.getInstance().time
         val durationTime: Float = (finishTime.time - startTime.time) / 1000f //unit seconds
@@ -121,7 +124,7 @@ class WorkoutRecordingViewModel(
             setOnMyLocationButtonClickListener(this@WorkoutRecordingViewModel)
             setOnMyLocationClickListener(this@WorkoutRecordingViewModel)
         }
-        requestCurrentLocation()
+        _requestPermission.value = NECESSARY_PERMISSION
     }
 
     override fun onMyLocationButtonClick(): Boolean {
@@ -130,7 +133,7 @@ class WorkoutRecordingViewModel(
     }
 
     fun onStartRecord() {
-        if (isLocationPermissionAllow()) {
+        if (!isLocationPermissionDenied) {
             startRecordWorkoutWorker()
         } else {
             requestCurrentLocation()
@@ -143,7 +146,7 @@ class WorkoutRecordingViewModel(
     @SuppressLint("MissingPermission")
     private fun requestCurrentLocation() {
         if (!::mMap.isInitialized) return
-        if (isLocationPermissionAllow()) {
+        if (!isLocationPermissionDenied) {
             mMap.isMyLocationEnabled = true
             locationManager.requestLocationUpdates(
                 LocationManager.GPS_PROVIDER,
@@ -153,19 +156,7 @@ class WorkoutRecordingViewModel(
             )
         } else {
             // Permission to access the location is missing. Show rationale and request permission
-            PermissionUtils.requestPermission(
-                activity as AppCompatActivity, LOCATION_PERMISSION_REQUEST_CODE,
-                Manifest.permission.ACCESS_FINE_LOCATION, true
-            )
-        }
-    }
-
-    fun checkLocationPermission() {
-        if (permissionDenied) {
-            // Permission was not granted, display error dialog.
-            PermissionDeniedDialog.newInstance(true)
-                .show((activity as FragmentActivity).supportFragmentManager, "dialog")
-            permissionDenied = false
+            _requestPermission.value = NECESSARY_PERMISSION
         }
     }
 
@@ -224,27 +215,15 @@ class WorkoutRecordingViewModel(
     private fun getWorkManagerInstance() = WorkManager.getInstance(activity.applicationContext)
 
     fun onRequestPermissionsResult(
-        requestCode: Int,
         permissions: Array<String>,
         grantResults: IntArray
     ) {
-        if (requestCode != LOCATION_PERMISSION_REQUEST_CODE) {
-            return
-        }
-        if (PermissionUtils.isPermissionGranted(
-                permissions,
-                grantResults,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            )
-        ) {
-            // Enable the my location layer if the permission has been granted.
+        if (PermissionUtils.isPermissionGranted(permissions, grantResults, NECESSARY_PERMISSION)) {
+            isLocationPermissionDenied = false
             requestCurrentLocation()
         } else {
-            // Permission was denied. Display an error message
-            // [START_EXCLUDE]
-            // Display the missing permission error dialog when the fragments resume.
-            permissionDenied = true
-            // [END_EXCLUDE]
+            isLocationPermissionDenied = true
+            _permissionDeniedDialog.value = Unit
         }
     }
 
@@ -361,7 +340,8 @@ class WorkoutRecordingViewModel(
 
     private fun getCurrentLocation(): Location? {
         return if (ContextCompat.checkSelfPermission(
-                activity, Manifest.permission.ACCESS_FINE_LOCATION
+                activity,
+                ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
             locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
@@ -369,10 +349,6 @@ class WorkoutRecordingViewModel(
             null
         }
     }
-
-    private fun isLocationPermissionAllow() = ContextCompat.checkSelfPermission(
-        activity, Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
 
     override fun onMyLocationClick(p0: Location) {
         val currentLng = p0.toLatLng()
@@ -399,9 +375,13 @@ class WorkoutRecordingViewModel(
         private const val RECORDING_WORKER_TAG = "recording-workout"
         private const val INTERVAL_LOCATION_UPDATE: Long = 1000
         private const val MIN_DISTANCE = 1f
-        private const val LOCATION_PERMISSION_REQUEST_CODE = 1
         private const val QUALITY_COMPRESS_IMAGE = 100
         private const val IMAGE_FILE_TEMPLATE = "%s.jpeg"
         const val REQUEST_CHECK_SETTINGS = 2
+        private val NECESSARY_PERMISSION = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            listOf(ACCESS_FINE_LOCATION, ACCESS_BACKGROUND_LOCATION)
+        } else {
+            listOf(ACCESS_FINE_LOCATION)
+        }
     }
 }
