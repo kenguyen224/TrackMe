@@ -70,26 +70,43 @@ class WorkoutRecordingActivity : AppCompatActivity(),
             supportFragmentManager.findFragmentById(R.id.mapFragment) as? SupportMapFragment
         mapFragment?.getMapAsync(recordWorkoutViewModel)
         with(viewBinding) {
-            btnStartRecord.setOnClickListener {
-                recordWorkoutViewModel.onStartRecord()
-            }
-            btnFinish.setOnClickListener {
-                finish()
-            }
+            btnStartRecord.setOnClickListener { recordWorkoutViewModel.onStartRecord() }
+            btnFinish.setOnClickListener { finish() }
             btnStopRecord.setOnClickListener {
-                viewBinding.btnStopRecord.show(false)
+                showStopRecordingView()
                 service?.stopRecording()
-                btnStartRecord.show(true)
+            }
+            btnPause.setOnClickListener {
+                service?.onPause()
+                showPauseView()
+            }
+            btnResume.setOnClickListener {
+                service?.onResume()
+                showRecordingView()
             }
         }
         bindViewModel()
     }
 
+    private fun showRecordingView() = with(viewBinding) {
+        btnStartRecord.show(false)
+        btnPause.show(true)
+        btnStopRecord.show(true)
+        btnResume.show(false)
+    }
+
+    private fun showPauseView() = with(viewBinding) {
+        btnPause.show(false)
+        btnResume.show(true)
+    }
+
+    private fun showStopRecordingView() = with(viewBinding) {
+        btnPause.show(false)
+        btnResume.show(false)
+        btnStopRecord.show(false)
+    }
+
     private fun bindViewModel() = with(recordWorkoutViewModel) {
-        showRecordButton.observe(this@WorkoutRecordingActivity, {
-            viewBinding.btnStartRecord.show(it)
-            viewBinding.btnStopRecord.show(!it)
-        })
         showFinishButton.observe(this@WorkoutRecordingActivity, {
             viewBinding.btnFinish.show(true)
         })
@@ -101,6 +118,7 @@ class WorkoutRecordingActivity : AppCompatActivity(),
         })
         startService.observe(this@WorkoutRecordingActivity, {
             service?.startRecording()
+            showRecordingView()
         })
     }
 
@@ -134,6 +152,7 @@ class WorkoutRecordingActivity : AppCompatActivity(),
             getString(R.string.counting_time_template, hours, minutes, seconds)
     }
 
+    @Suppress("DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CHECK_SETTINGS) {

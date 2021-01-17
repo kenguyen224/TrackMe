@@ -54,9 +54,6 @@ class WorkoutRecordingViewModel(
     private lateinit var mMap: GoogleMap
     private var isLocationPermissionDenied: Boolean = true
 
-    private var _showRecordButton = MutableLiveData<Boolean>()
-    val showRecordButton: LiveData<Boolean> = _showRecordButton
-
     private var _showFinishButton = MutableLiveData<Unit>()
     val showFinishButton: LiveData<Unit> = _showFinishButton
 
@@ -183,7 +180,6 @@ class WorkoutRecordingViewModel(
             requestEnableLocationSetting()
             return
         }
-        _showRecordButton.value = false
         _startService.value = Unit
     }
 

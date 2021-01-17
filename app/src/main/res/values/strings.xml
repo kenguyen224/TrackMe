@@ -25,4 +25,6 @@
     <string name="txt_end_point">Finish</string>
     <string name="init_speed">0 km/h</string>
     <string name="txt_avg_speed">Average Speed:</string>
+    <string name="btn_pause">Pause</string>
+    <string name="btn_resume">Resume</string>
 </resources>

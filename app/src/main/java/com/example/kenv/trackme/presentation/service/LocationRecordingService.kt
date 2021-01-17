@@ -28,26 +28,13 @@ import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Created by Kenv on 11/01/2021.
  */
 
-
 class LocationRecordingService : Service() {
-    companion object {
-        private val TAG = LocationRecordingService::class.java.name
-        private const val CHANNEL_ID = "channel_01"
-        private const val EXTRA_STARTED_FROM_NOTIFICATION = "started_from_notification"
-        private const val NOTIFICATION_ID = 12345678
-        private const val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 5000
-        private const val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
-            UPDATE_INTERVAL_IN_MILLISECONDS / 2
-
-        private var INSTANCE: LocationRecordingService? = null
-        fun getInstance() = INSTANCE
-    }
-
     /**
      * Class used for the client Binder.  Since this service runs in the same process as its
      * clients, we don't need to deal with IPC.
@@ -72,6 +59,7 @@ class LocationRecordingService : Service() {
     private lateinit var startTime: Date
     private var timer: Timer = Timer()
     private var seconds: Long = 0
+    private var isPause: AtomicBoolean = AtomicBoolean(false)
 
     private val mLocationRequest: LocationRequest = LocationRequest().apply {
         interval = UPDATE_INTERVAL_IN_MILLISECONDS
@@ -117,6 +105,9 @@ class LocationRecordingService : Service() {
         timer = Timer()
         timer.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
+                if (isPause.get()) {
+                    return
+                }
                 seconds++
                 clientCallBack?.onTimeChange(seconds)
             }
@@ -164,6 +155,7 @@ class LocationRecordingService : Service() {
 
     override fun onDestroy() {
         mServiceHandler.removeCallbacksAndMessages(null)
+        INSTANCE = null
     }
 
     /**
@@ -253,7 +245,9 @@ class LocationRecordingService : Service() {
     }
 
     private fun onNewLocation(location: Location) {
-        Log.d("TrackMe", "New location: $location")
+        if (isPause.get()) {
+            return
+        }
         currentLocation = location
         if (trackingLocation.isNotEmpty()) {
             distance += SphericalUtil.computeDistanceBetween(
@@ -273,28 +267,23 @@ class LocationRecordingService : Service() {
         }
     }
 
-    /**
-     * Returns true if this is a foreground service.
-     *
-     * @param context The [Context].
-     */
+    @Suppress("DEPRECATION")
     private fun serviceIsRunningInForeground(context: Context): Boolean {
         val manager = context.getSystemService(
             ACTIVITY_SERVICE
         ) as ActivityManager
-        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
-            if (javaClass.name == service.service.className) {
-                if (service.foreground) {
-                    return true
-                }
-            }
-        }
-        return false
+        return manager.getRunningServices(Int.MAX_VALUE).indexOfFirst {
+            javaClass.name == it.service.className && it.foreground
+        } > -1
     }
 
     fun initClientCallBack(callBack: ClientCallback?) {
         this.clientCallBack = callBack
     }
+
+    fun onPause() = isPause.set(true)
+
+    fun onResume() = isPause.set(false)
 
     interface ClientCallback {
         fun onLocationUpdate(
@@ -306,5 +295,18 @@ class LocationRecordingService : Service() {
         fun onTimeChange(seconds: Long)
         fun showResult(workoutResult: WorkoutResult)
         fun markStartPosition(position: LatLng)
+    }
+
+    companion object {
+        private val TAG = LocationRecordingService::class.java.name
+        private const val CHANNEL_ID = "channel_01"
+        private const val EXTRA_STARTED_FROM_NOTIFICATION = "started_from_notification"
+        private const val NOTIFICATION_ID = 12345678
+        private const val UPDATE_INTERVAL_IN_MILLISECONDS: Long = 5000
+        private const val FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS =
+            UPDATE_INTERVAL_IN_MILLISECONDS / 2
+
+        private var INSTANCE: LocationRecordingService? = null
+        fun getInstance() = INSTANCE
     }
 }
