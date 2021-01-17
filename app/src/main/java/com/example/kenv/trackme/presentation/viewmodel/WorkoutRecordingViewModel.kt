@@ -6,21 +6,17 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.IntentSender
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Matrix
 import android.location.Location
-import android.location.LocationListener
 import android.location.LocationManager
 import android.util.Log
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.kenv.trackme.domain.coroutine.CoroutineDispatcherProvider
 import com.example.kenv.trackme.domain.entity.WorkoutEntity
@@ -29,9 +25,6 @@ import com.example.kenv.trackme.domain.usecases.SaveWorkoutUseCase
 import com.example.kenv.trackme.presentation.arguments.WorkoutResult
 import com.example.kenv.trackme.presentation.extensions.toLatLng
 import com.example.kenv.trackme.presentation.utils.PermissionUtils
-import com.example.kenv.trackme.presentation.utils.formatMeter
-import com.example.kenv.trackme.presentation.utils.formatSpeedText
-import com.example.kenv.trackme.presentation.worker.WorkoutRecordingWorker
 import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
@@ -43,9 +36,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.PolylineOptions
-import com.google.maps.android.SphericalUtil
 import java.io.IOException
-import java.util.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -57,18 +48,11 @@ class WorkoutRecordingViewModel(
     private val saveWorkoutUseCase: SaveWorkoutUseCase,
     private val activity: Activity,
     private val dispatcher: CoroutineDispatcherProvider
-) : ViewModel(), GoogleMap.SnapshotReadyCallback, LocationListener,
+) : ViewModel(), GoogleMap.SnapshotReadyCallback,
     GoogleMap.OnMyLocationClickListener, GoogleMap.OnMyLocationButtonClickListener,
     OnMapReadyCallback {
-    private var locationManager: LocationManager =
-        activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
     private lateinit var mMap: GoogleMap
     private var isLocationPermissionDenied: Boolean = true
-    private val drawPosition: MutableList<LatLng> = mutableListOf()
-    private lateinit var currentPosition: LatLng
-    private lateinit var startTime: Date
-    private lateinit var finishTime: Date
-    private var isRecording: Boolean = false
 
     private var _showRecordButton = MutableLiveData<Boolean>()
     val showRecordButton: LiveData<Boolean> = _showRecordButton
@@ -76,47 +60,16 @@ class WorkoutRecordingViewModel(
     private var _showFinishButton = MutableLiveData<Unit>()
     val showFinishButton: LiveData<Unit> = _showFinishButton
 
-    private var _showResult = MutableLiveData<WorkoutResult>()
-    val showResult: LiveData<WorkoutResult> = _showResult
-
-    private var _showDistance = MutableLiveData<Double>()
-    val showDistance: LiveData<Double> = _showDistance
-
-    private var _observeWorkout = MutableLiveData<UUID>()
-    val observeWorkout: LiveData<UUID> = _observeWorkout
-
-    private var _showSpeed = MutableLiveData<Float>()
-    val showSpeed: LiveData<Float> = _showSpeed
-
     private var _requestPermission = MutableLiveData<List<String>>()
     val requestPermission: LiveData<List<String>> = _requestPermission
 
     private var _permissionDeniedDialog = MutableLiveData<Unit>()
     val permissionDeniedDialog: LiveData<Unit> = _permissionDeniedDialog
 
-    private var avgSpeed: Float = 0f
+    private var _startService = MutableLiveData<Unit>()
+    val startService: LiveData<Unit> = _startService
 
-    fun onStopRecording() {
-        isRecording = false
-        getWorkManagerInstance().cancelAllWorkByTag(RECORDING_WORKER_TAG)
-        finishTime = Calendar.getInstance().time
-        val durationTime: Float = (finishTime.time - startTime.time) / 1000f //unit seconds
-        val distance = _showDistance.value ?: 0.0
-        avgSpeed = (distance.toFloat() / durationTime) * 3.6f // m/s to km/h
-        val middlePoint = LatLng(
-            (currentPosition.latitude + drawPosition[0].latitude) / 2,
-            (currentPosition.longitude + drawPosition[0].longitude) / 2
-        )
-        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(middlePoint, 14f)
-        mMap.animateCamera(cameraUpdate)
-        takeScreenShot()
-        _showResult.value = WorkoutResult(
-            startTime.toString(),
-            finishTime.toString(),
-            _showDistance.value?.formatMeter() ?: "",
-            avgSpeed.formatSpeedText()
-        )
-    }
+    private lateinit var workoutResult: WorkoutResult
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
@@ -134,7 +87,7 @@ class WorkoutRecordingViewModel(
 
     fun onStartRecord() {
         if (!isLocationPermissionDenied) {
-            startRecordWorkoutWorker()
+            startRecordingService()
         } else {
             requestCurrentLocation()
         }
@@ -148,12 +101,6 @@ class WorkoutRecordingViewModel(
         if (!::mMap.isInitialized) return
         if (!isLocationPermissionDenied) {
             mMap.isMyLocationEnabled = true
-            locationManager.requestLocationUpdates(
-                LocationManager.GPS_PROVIDER,
-                INTERVAL_LOCATION_UPDATE,
-                MIN_DISTANCE,
-                this
-            )
         } else {
             // Permission to access the location is missing. Show rationale and request permission
             _requestPermission.value = NECESSARY_PERMISSION
@@ -201,18 +148,16 @@ class WorkoutRecordingViewModel(
     private fun saveWorkout(filePath: String) = viewModelScope.launch(dispatcher.io) {
         saveWorkoutUseCase(
             WorkoutEntity(
-                startTime.toString(),
-                finishTime.toString(),
+                workoutResult.startTime,
+                workoutResult.finishTime,
                 filePath,
-                _showDistance.value ?: 0.0,
-                drawPosition.toLatLngModel(),
-                avgSpeed
+                workoutResult.distance,
+                workoutResult.trackingLocation.toLatLngModel(),
+                workoutResult.avgSpeed
             )
         )
         _showFinishButton.postValue(Unit)
     }
-
-    private fun getWorkManagerInstance() = WorkManager.getInstance(activity.applicationContext)
 
     fun onRequestPermissionsResult(
         permissions: Array<String>,
@@ -233,29 +178,30 @@ class WorkoutRecordingViewModel(
         super.onCleared()
     }
 
-    private fun startRecordWorkoutWorker() {
+    private fun startRecordingService() {
         if (!isGPSEnabled(activity)) {
             requestEnableLocationSetting()
             return
         }
-        if (!::currentPosition.isInitialized) {
-            Toast.makeText(activity, "GPS is not available here", Toast.LENGTH_SHORT).show()
-            return
-        }
-        getCurrentLocation()?.let {
-            currentPosition = it.toLatLng()
-        }
-        isRecording = true
-        startTime = Calendar.getInstance().time
-        drawPosition.clear()
-        drawPosition.add(currentPosition)
-        mMap.addMarker(MarkerOptions().position(currentPosition))
-        val recordingRequest = OneTimeWorkRequestBuilder<WorkoutRecordingWorker>()
-            .addTag(RECORDING_WORKER_TAG)
-            .build()
-        getWorkManagerInstance().enqueue(recordingRequest)
-        _observeWorkout.value = recordingRequest.id
         _showRecordButton.value = false
+        _startService.value = Unit
+    }
+
+    fun markStartPosition(position: LatLng) {
+        mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(position, 15f))
+        mMap.addMarker(MarkerOptions().position(position))
+    }
+
+    fun onFinishWorkout(result: WorkoutResult) {
+        workoutResult = result
+        val locations = result.trackingLocation
+        val middlePoint = LatLng(
+            (locations.first().latitude + locations.last().latitude) / 2,
+            (locations.first().longitude + locations.last().longitude) / 2
+        )
+        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(middlePoint, 14f)
+        mMap.animateCamera(cameraUpdate)
+        takeScreenShot()
     }
 
     private fun requestEnableLocationSetting() {
@@ -269,7 +215,7 @@ class WorkoutRecordingViewModel(
             val client: SettingsClient = LocationServices.getSettingsClient(activity)
             client.checkLocationSettings(builder.build()).apply {
                 addOnSuccessListener {
-                    startRecordWorkoutWorker()
+                    startRecordingService()
                 }
                 addOnFailureListener { exception ->
                     if (exception is ResolvableApiException) {
@@ -291,63 +237,30 @@ class WorkoutRecordingViewModel(
         }
     }
 
-    fun onRequestUpdateRoadEvent(time: Long) {
-        if (time % 5 == 0L) {
-            requestCurrentLocation()
+    fun drawRoad(positions: List<LatLng>) {
+        if (positions.isNotEmpty()) {
+            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(positions.last(), 15f))
         }
-    }
-
-    private fun drawRoad() {
-        if (drawPosition.size <= 2) {
+        if (positions.size <= 2) {
             mMap.addPolyline(PolylineOptions().apply {
-                addAll(drawPosition)
+                addAll(positions)
                 color(Color.BLUE)
                 width(5f)
                 geodesic(true)
             })
         } else {
             mMap.addPolyline(PolylineOptions().apply {
-                add(drawPosition[drawPosition.lastIndex - 1], drawPosition.last())
+                add(positions[positions.lastIndex - 1], positions.last())
                 color(Color.BLUE)
                 width(5f)
                 geodesic(true)
             })
-        }
-    }
-
-    override fun onLocationChanged(location: Location) {
-        getCurrentLocation()?.let {
-            currentPosition = it.toLatLng()
-            val currentDistance = _showDistance.value ?: 0.0
-            val lastPosition =
-                drawPosition.takeIf { item -> item.isNotEmpty() }?.last() ?: currentPosition
-            _showDistance.value = currentDistance + SphericalUtil.computeDistanceBetween(
-                lastPosition,
-                currentPosition
-            )
-            _showSpeed.value = it.speed * 3.6f // m/s -> km/h
-            mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(currentPosition, 15f))
-            locationManager.removeUpdates(this)
-            drawPosition.add(currentPosition)
-            drawRoad()
         }
     }
 
     private fun isGPSEnabled(context: Context): Boolean {
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-    }
-
-    private fun getCurrentLocation(): Location? {
-        return if (ContextCompat.checkSelfPermission(
-                activity,
-                ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-        } else {
-            null
-        }
     }
 
     override fun onMyLocationClick(p0: Location) {
@@ -357,24 +270,14 @@ class WorkoutRecordingViewModel(
         Toast.makeText(activity, "Current location:\n$p0", Toast.LENGTH_LONG).show()
     }
 
-    override fun onProviderDisabled(provider: String) {
-        Toast.makeText(activity, "Disable location", Toast.LENGTH_SHORT).show()
-    }
-
-    override fun onProviderEnabled(provider: String) {
-        Toast.makeText(activity, "Enable location", Toast.LENGTH_SHORT).show()
-    }
-
     fun onRequestLocationSettingResult(resultCode: Int) {
         if (resultCode == Activity.RESULT_OK) {
-            startRecordWorkoutWorker()
+            startRecordingService()
         }
     }
 
     companion object {
         private const val RECORDING_WORKER_TAG = "recording-workout"
-        private const val INTERVAL_LOCATION_UPDATE: Long = 1000
-        private const val MIN_DISTANCE = 1f
         private const val QUALITY_COMPRESS_IMAGE = 100
         private const val IMAGE_FILE_TEMPLATE = "%s.jpeg"
         const val REQUEST_CHECK_SETTINGS = 2

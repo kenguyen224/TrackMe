@@ -1,19 +1,23 @@
 package com.example.kenv.trackme.presentation.activity
 
+import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
-import android.util.Log
+import android.os.IBinder
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.navigation.ActivityNavigator
-import androidx.work.WorkManager
 import com.example.kenv.trackme.R
 import com.example.kenv.trackme.databinding.ActivityWorkoutRecordingBinding
+import com.example.kenv.trackme.presentation.arguments.WorkoutResult
 import com.example.kenv.trackme.presentation.di.WorkoutRecordingComponent
 import com.example.kenv.trackme.presentation.dialog.PermissionDeniedDialog
 import com.example.kenv.trackme.presentation.dialog.RationaleDialog
 import com.example.kenv.trackme.presentation.extensions.show
+import com.example.kenv.trackme.presentation.service.LocationRecordingService
 import com.example.kenv.trackme.presentation.utils.createComponent
 import com.example.kenv.trackme.presentation.utils.formatMeter
 import com.example.kenv.trackme.presentation.utils.formatSpeedText
@@ -21,10 +25,31 @@ import com.example.kenv.trackme.presentation.viewmodel.WorkoutRecordingViewModel
 import com.example.kenv.trackme.presentation.viewmodel.WorkoutRecordingViewModel.Companion.REQUEST_CHECK_SETTINGS
 import com.example.kenv.trackme.presentation.viewmodel.WorkoutRecordingViewModelFactory
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.LatLng
 import javax.inject.Inject
 
 class WorkoutRecordingActivity : AppCompatActivity(),
-    ActivityCompat.OnRequestPermissionsResultCallback {
+    ActivityCompat.OnRequestPermissionsResultCallback, LocationRecordingService.ClientCallback {
+
+    private var service: LocationRecordingService? = null
+    private var isBidingService = false
+
+    // Monitors the state of the connection to the service.
+    private val serviceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, serviceBinder: IBinder) {
+            val binder: LocationRecordingService.LocalBinder =
+                serviceBinder as LocationRecordingService.LocalBinder
+            service = binder.getService()
+            service?.initClientCallBack(this@WorkoutRecordingActivity)
+            isBidingService = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            service?.initClientCallBack(null)
+            service = null
+            isBidingService = false
+        }
+    }
 
     private lateinit var viewBinding: ActivityWorkoutRecordingBinding
     lateinit var component: WorkoutRecordingComponent
@@ -53,7 +78,8 @@ class WorkoutRecordingActivity : AppCompatActivity(),
             }
             btnStopRecord.setOnClickListener {
                 viewBinding.btnStopRecord.show(false)
-                recordWorkoutViewModel.onStopRecording()
+                service?.stopRecording()
+                btnStartRecord.show(true)
             }
         }
         bindViewModel()
@@ -64,37 +90,17 @@ class WorkoutRecordingActivity : AppCompatActivity(),
             viewBinding.btnStartRecord.show(it)
             viewBinding.btnStopRecord.show(!it)
         })
-        showResult.observe(this@WorkoutRecordingActivity, {
-            viewBinding.rlRecordingInfo.show(false)
-            viewBinding.viewResult.rootViewResult.show(true)
-            viewBinding.viewResult.tvStartTime.text = it.startTime
-            viewBinding.viewResult.tvFinishTime.text = it.finishTime
-            viewBinding.viewResult.tvDistance.text = it.distance
-            viewBinding.viewResult.tvAvgSpeed.text = it.avgSpeed
-        })
         showFinishButton.observe(this@WorkoutRecordingActivity, {
             viewBinding.btnFinish.show(true)
-        })
-        observeWorkout.observe(this@WorkoutRecordingActivity, {
-            WorkManager.getInstance(applicationContext).getWorkInfoByIdLiveData(it)
-                .observe(this@WorkoutRecordingActivity, { workInfo ->
-                    val time = workInfo.progress.getLong("countTime", 0)
-                    Log.d("TrackMe", "count time: $time")
-                    showCountingTime(time)
-                    recordWorkoutViewModel.onRequestUpdateRoadEvent(time)
-                })
-        })
-        showDistance.observe(this@WorkoutRecordingActivity, {
-            viewBinding.tvCurrentDistance.text = it.formatMeter()
-        })
-        showSpeed.observe(this@WorkoutRecordingActivity, {
-            viewBinding.tvCurrentSpeed.text = it.formatSpeedText()
         })
         requestPermission.observe(this@WorkoutRecordingActivity, {
             requestPermission(it)
         })
         permissionDeniedDialog.observe(this@WorkoutRecordingActivity, {
             PermissionDeniedDialog.newInstance().show(supportFragmentManager, DIALOG_TAG)
+        })
+        startService.observe(this@WorkoutRecordingActivity, {
+            service?.startRecording()
         })
     }
 
@@ -145,6 +151,47 @@ class WorkoutRecordingActivity : AppCompatActivity(),
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             recordWorkoutViewModel.onRequestPermissionsResult(permissions, grantResults)
         }
+    }
+
+    override fun onStop() {
+        unbindService(serviceConnection)
+        super.onStop()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        bindService(
+            Intent(this, LocationRecordingService::class.java), serviceConnection,
+            Context.BIND_AUTO_CREATE
+        )
+    }
+
+    override fun onLocationUpdate(
+        latLngs: List<LatLng>,
+        speed: Float,
+        distance: Double
+    ) {
+        recordWorkoutViewModel.drawRoad(latLngs)
+        viewBinding.tvCurrentSpeed.text = (speed * 3.6f).formatSpeedText()
+        viewBinding.tvCurrentDistance.text = distance.formatMeter()
+    }
+
+    override fun onTimeChange(seconds: Long) = runOnUiThread { showCountingTime(seconds) }
+
+    override fun showResult(workoutResult: WorkoutResult) {
+        with(viewBinding.viewResult) {
+            viewBinding.rlRecordingInfo.show(false)
+            rootViewResult.show(true)
+            tvStartTime.text = workoutResult.startTime
+            tvFinishTime.text = workoutResult.finishTime
+            tvDistance.text = workoutResult.distance.formatMeter()
+            tvAvgSpeed.text = workoutResult.avgSpeed.formatSpeedText()
+        }
+        recordWorkoutViewModel.onFinishWorkout(workoutResult)
+    }
+
+    override fun markStartPosition(position: LatLng) {
+        recordWorkoutViewModel.markStartPosition(position)
     }
 
     companion object {

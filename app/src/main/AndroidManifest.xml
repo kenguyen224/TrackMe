@@ -17,6 +17,7 @@
         android:theme="@style/Theme.TrackMe">
         <activity
             android:name=".presentation.activity.WorkoutRecordingActivity"
+            android:exported="false"
             android:label="@string/title_activity_tracking">
 
         </activity>
@@ -46,7 +47,7 @@
             android:label="@string/activity_review_title" />
 
         <service
-            android:name=".presentation.service.WorkoutRecordingService"
+            android:name=".presentation.service.LocationRecordingService"
             android:foregroundServiceType="location" />
     </application>
 

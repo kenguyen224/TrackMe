@@ -20,7 +20,7 @@
     <string name="activity_review_title">Review</string>
     <string name="init_distance">0m</string>
     <string name="init_counting_time">00:00:00s</string>
-    <string name="counting_time_template">%d:%d:%ds</string>
+    <string name="counting_time_template">%dh:%dm:%ds</string>
     <string name="txt_start_point">Start</string>
     <string name="txt_end_point">Finish</string>
     <string name="init_speed">0 km/h</string>

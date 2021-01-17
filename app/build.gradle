@@ -127,4 +127,5 @@ dependencies {
     implementation "com.google.dagger:dagger:$dagger2_version"
     kapt "com.google.dagger:dagger-compiler:$dagger2_version"
     implementation "com.google.code.gson:gson:$gson"
+    implementation 'androidx.localbroadcastmanager:localbroadcastmanager:1.0.0'
 }

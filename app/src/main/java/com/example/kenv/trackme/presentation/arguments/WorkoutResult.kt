@@ -1,5 +1,7 @@
 package com.example.kenv.trackme.presentation.arguments
 
+import com.google.android.gms.maps.model.LatLng
+
 /**
  * Created by Kenv on 03/01/2021.
  */
@@ -7,6 +9,7 @@ package com.example.kenv.trackme.presentation.arguments
 data class WorkoutResult(
     val startTime: String,
     val finishTime: String,
-    val distance: String,
-    val avgSpeed: String
+    val distance: Double,
+    val avgSpeed: Float,
+    val trackingLocation: List<LatLng>
 )
