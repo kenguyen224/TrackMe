@@ -1,9 +1,9 @@
 package com.example.kenv.trackme.presentation.di.module
 
-import com.example.kenv.trackme.data.local.DefaultWorkoutStorage
 import com.example.kenv.trackme.data.local.WorkoutStorage
-import com.example.kenv.trackme.data.repository.DefaultWorkoutRepository
+import com.example.kenv.trackme.data.local.IWorkoutStorage
 import com.example.kenv.trackme.data.repository.WorkoutRepository
+import com.example.kenv.trackme.data.repository.IWorkoutRepository
 import dagger.Binds
 import dagger.Module
 
@@ -14,8 +14,8 @@ import dagger.Module
 @Module
 abstract class WorkoutModule {
     @Binds
-    abstract fun bindWorkoutStorage(defaultWorkoutStorage: DefaultWorkoutStorage): WorkoutStorage
+    abstract fun bindWorkoutStorage(workoutStorage: WorkoutStorage): IWorkoutStorage
 
     @Binds
-    abstract fun bindWorkoutRepository(defaultWorkoutRepository: DefaultWorkoutRepository): WorkoutRepository
+    abstract fun bindWorkoutRepository(defaultWorkoutRepository: WorkoutRepository): IWorkoutRepository
 }

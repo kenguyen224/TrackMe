@@ -1,6 +1,6 @@
 package com.example.kenv.trackme.domain.usecases
 
-import com.example.kenv.trackme.data.repository.WorkoutRepository
+import com.example.kenv.trackme.data.repository.IWorkoutRepository
 import com.example.kenv.trackme.domain.entity.Result
 import com.example.kenv.trackme.domain.entity.WorkoutEntity
 import com.example.kenv.trackme.domain.transform.toModel
@@ -11,7 +11,7 @@ import javax.inject.Inject
  */
 
 class SaveWorkoutUseCase @Inject constructor(
-    private val repository: WorkoutRepository
+    private val repository: IWorkoutRepository
 ) {
     suspend operator fun invoke(workoutEntity: WorkoutEntity): Result<Unit> = try {
         Result.Success(repository.save(workoutEntity.toModel()))

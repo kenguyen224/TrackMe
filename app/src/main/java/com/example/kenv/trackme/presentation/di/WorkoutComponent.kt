@@ -1,7 +1,7 @@
 package com.example.kenv.trackme.presentation.di
 
 import android.app.Activity
-import com.example.kenv.trackme.data.repository.WorkoutRepository
+import com.example.kenv.trackme.data.repository.IWorkoutRepository
 import com.example.kenv.trackme.presentation.activity.WorkoutActivity
 import com.example.kenv.trackme.presentation.di.module.WorkoutModule
 import com.example.kenv.trackme.presentation.di.scope.WorkoutScope
@@ -19,7 +19,7 @@ import dagger.Component
 @WorkoutScope
 interface WorkoutComponent {
 
-    val workoutRepository: WorkoutRepository
+    val workoutRepository: IWorkoutRepository
 
     fun inject(activity: WorkoutActivity)
     fun inject(fragment: HistoryWorkoutFragment)
