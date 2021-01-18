@@ -12,6 +12,7 @@ import androidx.core.app.ActivityCompat
 import androidx.navigation.ActivityNavigator
 import com.example.kenv.trackme.R
 import com.example.kenv.trackme.databinding.ActivityWorkoutRecordingBinding
+import com.example.kenv.trackme.presentation.arguments.WorkoutPendingArgs
 import com.example.kenv.trackme.presentation.arguments.WorkoutResult
 import com.example.kenv.trackme.presentation.di.WorkoutRecordingComponent
 import com.example.kenv.trackme.presentation.dialog.PermissionDeniedDialog
@@ -87,6 +88,23 @@ class WorkoutRecordingActivity : AppCompatActivity(),
             }
         }
         bindViewModel()
+        handleResumeWhenClickFromNotification()
+    }
+
+    private fun handleResumeWhenClickFromNotification() {
+        intent.extras?.getParcelable<WorkoutPendingArgs>(WORKOUT_PENDING_ARGS)?.let {
+            if (it.isPause) {
+                showPauseView()
+            } else {
+                showRecordingView()
+            }
+            with(viewBinding) {
+                tvCurrentTime.text = it.activeTime.formatTimeText()
+                tvCurrentDistance.text = it.distance.formatMeter()
+                val speed: Float = it.distance.toFloat() / it.activeTime
+                tvCurrentSpeed.text = (speed * 3.6f).formatSpeedText()
+            }
+        }
     }
 
     private fun showRecordingView() = with(viewBinding) {
@@ -99,6 +117,8 @@ class WorkoutRecordingActivity : AppCompatActivity(),
     private fun showPauseView() = with(viewBinding) {
         btnPause.show(false)
         btnResume.show(true)
+        btnStartRecord.show(false)
+        btnStopRecord.show(true)
     }
 
     private fun showStopRecordingView() = with(viewBinding) {
@@ -197,7 +217,9 @@ class WorkoutRecordingActivity : AppCompatActivity(),
     }
 
     override fun onTimeChange(seconds: Long) =
-        runOnUiThread { viewBinding.tvCurrentTime.text = seconds.formatTimeText() }
+        runOnUiThread {
+            viewBinding.tvCurrentTime.text = seconds.formatTimeText()
+        }
 
     override fun showResult(workoutResult: WorkoutResult) {
         with(viewBinding.viewResult) {
@@ -219,5 +241,6 @@ class WorkoutRecordingActivity : AppCompatActivity(),
     companion object {
         private const val LOCATION_PERMISSION_REQUEST_CODE = 15
         private const val DIALOG_TAG = "activity-recording-dialog"
+        const val WORKOUT_PENDING_ARGS = "workout-pending-args"
     }
 }

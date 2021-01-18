@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -18,8 +19,11 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.kenv.trackme.R
+import com.example.kenv.trackme.presentation.activity.WorkoutRecordingActivity
+import com.example.kenv.trackme.presentation.arguments.WorkoutPendingArgs
 import com.example.kenv.trackme.presentation.arguments.WorkoutResult
 import com.example.kenv.trackme.presentation.extensions.toLatLng
+import com.example.kenv.trackme.presentation.utils.formatTimeText
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -108,6 +112,9 @@ class LocationRecordingService : Service() {
             override fun run() {
                 if (isPause.get()) {
                     return
+                }
+                if (serviceIsRunningInForeground(this@LocationRecordingService)) {
+                    mNotificationManager.notify(NOTIFICATION_ID, getNotification())
                 }
                 clientCallBack?.onTimeChange(seconds.incrementAndGet())
             }
@@ -205,27 +212,40 @@ class LocationRecordingService : Service() {
             Log.e(TAG, "Lost location permission. Could not remove updates. $unlikely")
         }
     }
-
-    private fun getLocationText(): String =
-        currentLocation?.let { "(" + it.latitude + ", " + it.longitude + ")" } ?: "Unknown location"
-
     /**
      * Returns the [NotificationCompat] used as part of the foreground service.
      */
     private fun getNotification(): Notification {
-        val text: CharSequence = getLocationText()
+        val text: CharSequence = seconds.get().formatTimeText()
         val priority = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             NotificationManager.IMPORTANCE_HIGH
         } else {
             NotificationCompat.PRIORITY_HIGH
         }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, WorkoutRecordingActivity::class.java).apply {
+                putExtra(
+                    WorkoutRecordingActivity.WORKOUT_PENDING_ARGS,
+                    WorkoutPendingArgs(distance, seconds.get(), isPause.get())
+                )
+            },
+            PendingIntent.FLAG_NO_CREATE
+        )
         val builder: NotificationCompat.Builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .addAction(
+                R.drawable.ic_launcher_foreground,
+                getString(R.string.open_app),
+                pendingIntent
+            )
             .setContentText(text)
             .setContentTitle("TrackMe App Recording")
             .setOngoing(true)
             .setPriority(priority)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setTicker(text)
+            .setNotificationSilent()
             .setWhen(System.currentTimeMillis())
         return builder.build()
     }
@@ -261,11 +281,6 @@ class LocationRecordingService : Service() {
         }
         trackingLocation.add(location.toLatLng())
         clientCallBack?.onLocationUpdate(trackingLocation, location.speed, distance)
-
-        // Update notification content if running as a foreground service.
-        if (serviceIsRunningInForeground(this)) {
-            mNotificationManager.notify(NOTIFICATION_ID, getNotification())
-        }
     }
 
     @Suppress("DEPRECATION")
@@ -285,6 +300,8 @@ class LocationRecordingService : Service() {
     fun onPause() = isPause.set(true)
 
     fun onResume() = isPause.set(false)
+
+    fun isPauseService() = isPause.get()
 
     interface ClientCallback {
         fun onLocationUpdate(
