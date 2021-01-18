@@ -11,5 +11,6 @@ data class WorkoutResult(
     val finishTime: String,
     val distance: Double,
     val avgSpeed: Float,
-    val trackingLocation: List<LatLng>
+    val trackingLocation: List<LatLng>,
+    val activeTime: Long
 )

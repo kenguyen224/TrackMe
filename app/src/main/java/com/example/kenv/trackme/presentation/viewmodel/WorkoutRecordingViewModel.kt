@@ -150,7 +150,8 @@ class WorkoutRecordingViewModel(
                 filePath,
                 workoutResult.distance,
                 workoutResult.trackingLocation.toLatLngModel(),
-                workoutResult.avgSpeed
+                workoutResult.avgSpeed,
+                workoutResult.activeTime
             )
         )
         _showFinishButton.postValue(Unit)

@@ -8,6 +8,7 @@ import com.example.kenv.trackme.databinding.ViewRowWorkoutBinding
 import com.example.kenv.trackme.domain.entity.WorkoutEntity
 import com.example.kenv.trackme.presentation.utils.formatMeter
 import com.example.kenv.trackme.presentation.utils.formatSpeedText
+import com.example.kenv.trackme.presentation.utils.formatTimeText
 
 /**
  * Created by Kenv on 22/12/2020.
@@ -22,6 +23,7 @@ class WorkoutAdapter(private val onClickItem: (WorkoutEntity) -> Unit) : Recycle
             viewBinding.viewResult.tvFinishTime.text = item.finishTime
             viewBinding.viewResult.tvDistance.text = item.distance.formatMeter()
             viewBinding.viewResult.tvAvgSpeed.text = item.avgSpeed.formatSpeedText()
+            viewBinding.viewResult.tvActiveTime.text = item.activeTime.formatTimeText()
             viewBinding.imgScreenShot.setImageURI(Uri.parse(item.screenShot))
             viewBinding.root.setOnClickListener {
                 onClickItem(item)

@@ -18,7 +18,8 @@ fun WorkoutModel.toEntity() = WorkoutEntity(
         this.trackingLocation,
         object : TypeToken<List<LatLngModel>>() {}.type
     ) ?: throw IllegalArgumentException("parse location tracking error"),
-    avgSpeed = this.avgSpeed
+    avgSpeed = this.avgSpeed,
+    activeTime = this.activeTime
 )
 
 fun List<WorkoutModel>.toEntity() = this.map {
@@ -31,7 +32,8 @@ fun WorkoutEntity.toModel() = WorkoutModel(
     screenShot = this.screenShot,
     distance = this.distance,
     trackingLocation = GSonUtils.toJsonString(this.trackingLocation),
-    avgSpeed = this.avgSpeed
+    avgSpeed = this.avgSpeed,
+    activeTime = this.activeTime
 )
 
 fun List<LatLng>.toLatLngModel() = this.map {

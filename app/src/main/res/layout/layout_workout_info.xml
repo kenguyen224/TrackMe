@@ -39,11 +39,28 @@
         android:layout_toEndOf="@id/tvFinishTimeTitle" />
 
     <TextView
-        android:id="@+id/tvDistanceTitle"
+        android:id="@+id/tvActiveTimeTitle"
         style="@style/textViewInfoWorkout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/tvFinishTimeTitle"
+        android:text="@string/active_time" />
+
+    <TextView
+        android:id="@+id/tvActiveTime"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvFinishTime"
+        android:layout_marginStart="@dimen/margin_default"
+        android:layout_toEndOf="@id/tvActiveTimeTitle" />
+
+    <TextView
+        android:id="@+id/tvDistanceTitle"
+        style="@style/textViewInfoWorkout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/tvActiveTimeTitle"
         android:text="@string/txt_distance" />
 
     <TextView
@@ -51,7 +68,7 @@
         style="@style/textViewInfoWorkout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/tvFinishTime"
+        android:layout_below="@id/tvActiveTime"
         android:layout_marginStart="@dimen/margin_default"
         android:layout_toEndOf="@id/tvDistanceTitle" />
 

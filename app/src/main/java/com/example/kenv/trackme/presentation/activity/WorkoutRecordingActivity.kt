@@ -21,6 +21,7 @@ import com.example.kenv.trackme.presentation.service.LocationRecordingService
 import com.example.kenv.trackme.presentation.utils.createComponent
 import com.example.kenv.trackme.presentation.utils.formatMeter
 import com.example.kenv.trackme.presentation.utils.formatSpeedText
+import com.example.kenv.trackme.presentation.utils.formatTimeText
 import com.example.kenv.trackme.presentation.viewmodel.WorkoutRecordingViewModel
 import com.example.kenv.trackme.presentation.viewmodel.WorkoutRecordingViewModel.Companion.REQUEST_CHECK_SETTINGS
 import com.example.kenv.trackme.presentation.viewmodel.WorkoutRecordingViewModelFactory
@@ -195,7 +196,8 @@ class WorkoutRecordingActivity : AppCompatActivity(),
         viewBinding.tvCurrentDistance.text = distance.formatMeter()
     }
 
-    override fun onTimeChange(seconds: Long) = runOnUiThread { showCountingTime(seconds) }
+    override fun onTimeChange(seconds: Long) =
+        runOnUiThread { viewBinding.tvCurrentTime.text = seconds.formatTimeText() }
 
     override fun showResult(workoutResult: WorkoutResult) {
         with(viewBinding.viewResult) {
@@ -205,6 +207,7 @@ class WorkoutRecordingActivity : AppCompatActivity(),
             tvFinishTime.text = workoutResult.finishTime
             tvDistance.text = workoutResult.distance.formatMeter()
             tvAvgSpeed.text = workoutResult.avgSpeed.formatSpeedText()
+            tvActiveTime.text = workoutResult.activeTime.formatTimeText()
         }
         recordWorkoutViewModel.onFinishWorkout(workoutResult)
     }

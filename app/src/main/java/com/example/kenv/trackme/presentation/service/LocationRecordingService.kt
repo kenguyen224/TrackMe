@@ -29,6 +29,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.SphericalUtil
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Created by Kenv on 11/01/2021.
@@ -58,7 +59,7 @@ class LocationRecordingService : Service() {
     private var distance: Double = 0.0
     private lateinit var startTime: Date
     private var timer: Timer = Timer()
-    private var seconds: Long = 0
+    private var seconds: AtomicLong = AtomicLong(0)
     private var isPause: AtomicBoolean = AtomicBoolean(false)
 
     private val mLocationRequest: LocationRequest = LocationRequest().apply {
@@ -101,15 +102,14 @@ class LocationRecordingService : Service() {
             clientCallBack?.markStartPosition(it.toLatLng())
         }
         startTime = Calendar.getInstance().time
-        seconds = 0
+        seconds.set(0)
         timer = Timer()
         timer.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
                 if (isPause.get()) {
                     return
                 }
-                seconds++
-                clientCallBack?.onTimeChange(seconds)
+                clientCallBack?.onTimeChange(seconds.incrementAndGet())
             }
         }, 1000, 1000)
         val startedFromNotification = intent.getBooleanExtra(
@@ -197,7 +197,8 @@ class LocationRecordingService : Service() {
                     finishTime.toString(),
                     distance,
                     avgSpeed,
-                    trackingLocation
+                    trackingLocation,
+                    seconds.get()
                 )
             )
         } catch (unlikely: SecurityException) {

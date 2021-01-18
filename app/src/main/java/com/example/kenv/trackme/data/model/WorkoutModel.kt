@@ -16,5 +16,6 @@ data class WorkoutModel(
     @ColumnInfo(name = "screen_shot") val screenShot: String,
     @ColumnInfo(name = "distance") val distance: Double,
     @ColumnInfo(name = "latlng") val trackingLocation: String,
-    @ColumnInfo(name = "avgSpeed") val avgSpeed: Float
+    @ColumnInfo(name = "avgSpeed") val avgSpeed: Float,
+    @ColumnInfo(name = "active_time") val activeTime: Long
 )
