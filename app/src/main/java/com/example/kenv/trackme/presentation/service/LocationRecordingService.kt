@@ -240,7 +240,7 @@ class LocationRecordingService : Service() {
                 pendingIntent
             )
             .setContentText(text)
-            .setContentTitle("TrackMe App Recording")
+            .setContentTitle(getString(R.string.notification_title))
             .setOngoing(true)
             .setPriority(priority)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -275,8 +275,7 @@ class LocationRecordingService : Service() {
                 trackingLocation.last(),
                 location.toLatLng()
             )
-        }
-        if (trackingLocation.isEmpty()) {
+        } else {
             clientCallBack?.markStartPosition(location.toLatLng())
         }
         trackingLocation.add(location.toLatLng())
@@ -300,8 +299,6 @@ class LocationRecordingService : Service() {
     fun onPause() = isPause.set(true)
 
     fun onResume() = isPause.set(false)
-
-    fun isPauseService() = isPause.get()
 
     interface ClientCallback {
         fun onLocationUpdate(

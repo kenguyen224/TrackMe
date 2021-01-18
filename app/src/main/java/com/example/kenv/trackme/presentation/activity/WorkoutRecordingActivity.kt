@@ -163,16 +163,6 @@ class WorkoutRecordingActivity : AppCompatActivity(),
         )
     } > -1
 
-    private fun showCountingTime(timeSecond: Long) {
-        val hours = timeSecond / 3600
-        val minutesRemain = (timeSecond - hours * 3600) / 60
-        val minutes = minutesRemain.takeIf { it > 0 } ?: 0
-        val secondRemain = timeSecond - hours * 3600 - minutes * 60
-        val seconds = secondRemain.takeIf { it > 0 } ?: 0
-        viewBinding.tvCurrentTime.text =
-            getString(R.string.counting_time_template, hours, minutes, seconds)
-    }
-
     @Suppress("DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -181,7 +171,6 @@ class WorkoutRecordingActivity : AppCompatActivity(),
         }
     }
 
-    // [START maps_check_location_permission_result]
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,

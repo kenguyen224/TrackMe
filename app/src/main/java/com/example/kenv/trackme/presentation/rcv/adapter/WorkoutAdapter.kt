@@ -19,14 +19,18 @@ class WorkoutAdapter(private val onClickItem: (WorkoutEntity) -> Unit) : Recycle
     class ViewHolder(private val viewBinding: ViewRowWorkoutBinding) :
         RecyclerView.ViewHolder(viewBinding.root) {
         fun bindView(item: WorkoutEntity, onClickItem: (WorkoutEntity) -> Unit) {
-            viewBinding.viewResult.tvStartTime.text = item.startTime
-            viewBinding.viewResult.tvFinishTime.text = item.finishTime
-            viewBinding.viewResult.tvDistance.text = item.distance.formatMeter()
-            viewBinding.viewResult.tvAvgSpeed.text = item.avgSpeed.formatSpeedText()
-            viewBinding.viewResult.tvActiveTime.text = item.activeTime.formatTimeText()
-            viewBinding.imgScreenShot.setImageURI(Uri.parse(item.screenShot))
-            viewBinding.root.setOnClickListener {
-                onClickItem(item)
+            with(viewBinding.viewResult) {
+                tvStartTime.text = item.startTime
+                tvFinishTime.text = item.finishTime
+                tvDistance.text = item.distance.formatMeter()
+                tvAvgSpeed.text = item.avgSpeed.formatSpeedText()
+                tvActiveTime.text = item.activeTime.formatTimeText()
+            }
+            with(viewBinding) {
+                imgScreenShot.setImageURI(Uri.parse(item.screenShot))
+                root.setOnClickListener {
+                    onClickItem(item)
+                }
             }
         }
     }
@@ -51,10 +55,5 @@ class WorkoutAdapter(private val onClickItem: (WorkoutEntity) -> Unit) : Recycle
         data.clear()
         data.addAll(listWorkout)
         notifyDataSetChanged()
-    }
-
-    fun insert(workoutEntity: WorkoutEntity) {
-        data.add(workoutEntity)
-        notifyItemInserted(data.size - 1)
     }
 }

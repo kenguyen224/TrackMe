@@ -21,7 +21,6 @@ import com.example.kenv.trackme.R
  * to handle permit or denial of this permission request.
  */
 class RationaleDialog : DialogFragment() {
-    private var finishActivity = false
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         val requestCode =
             arguments?.getInt(ARGUMENT_PERMISSION_REQUEST_CODE) ?: 0
@@ -35,23 +34,9 @@ class RationaleDialog : DialogFragment() {
                     permission,
                     requestCode
                 )
-                // Do not finish the Activity while requesting permission.
-                finishActivity = false
             }
             .setNegativeButton(android.R.string.cancel, null)
             .create()
-    }
-
-    override fun onDismiss(dialog: DialogInterface) {
-        super.onDismiss(dialog)
-        if (finishActivity) {
-            Toast.makeText(
-                activity,
-                R.string.permission_required_toast,
-                Toast.LENGTH_SHORT
-            ).show()
-            activity?.finish()
-        }
     }
 
     companion object {

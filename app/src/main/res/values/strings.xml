@@ -29,4 +29,5 @@
     <string name="btn_resume">Resume</string>
     <string name="active_time">Active time:</string>
     <string name="open_app">Open App</string>
+    <string name="notification_title">TrackMe App Recording</string>
 </resources>

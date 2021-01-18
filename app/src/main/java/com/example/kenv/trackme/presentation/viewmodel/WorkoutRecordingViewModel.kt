@@ -170,12 +170,6 @@ class WorkoutRecordingViewModel(
         }
     }
 
-    override fun onCleared() {
-        WorkManager.getInstance(activity.applicationContext)
-            .cancelAllWorkByTag(RECORDING_WORKER_TAG)
-        super.onCleared()
-    }
-
     private fun startRecordingService() {
         if (!isGPSEnabled(activity)) {
             requestEnableLocationSetting()
@@ -274,7 +268,6 @@ class WorkoutRecordingViewModel(
     }
 
     companion object {
-        private const val RECORDING_WORKER_TAG = "recording-workout"
         private const val QUALITY_COMPRESS_IMAGE = 100
         private const val IMAGE_FILE_TEMPLATE = "%s.jpeg"
         const val REQUEST_CHECK_SETTINGS = 2
