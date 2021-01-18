@@ -9,6 +9,7 @@ import com.example.kenv.trackme.databinding.ActivityWorkoutReviewBinding
 import com.example.kenv.trackme.presentation.extensions.show
 import com.example.kenv.trackme.presentation.utils.formatMeter
 import com.example.kenv.trackme.presentation.utils.formatSpeedText
+import com.example.kenv.trackme.presentation.utils.formatTimeText
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -77,6 +78,7 @@ class WorkoutReviewActivity : AppCompatActivity(), OnMapReadyCallback {
             tvFinishTime.text = args.workoutReviewArgument.finishTime
             tvDistance.text = args.workoutReviewArgument.distance.formatMeter()
             tvAvgSpeed.text = args.workoutReviewArgument.avgSpeed.formatSpeedText()
+            tvActiveTime.text = args.workoutReviewArgument.activeTime.formatTimeText()
         }
     }
 }

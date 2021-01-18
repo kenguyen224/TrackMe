@@ -58,7 +58,8 @@ class HistoryWorkoutFragment : BaseFragment() {
                         it.startTime,
                         it.finishTime,
                         it.distance,
-                        it.avgSpeed
+                        it.avgSpeed,
+                        it.activeTime
                     )
                 )
             )

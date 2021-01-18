@@ -18,4 +18,5 @@ data class WorkoutReviewArgument(
     val finishTime: String,
     val distance: Double,
     val avgSpeed: Float,
+    val activeTime: Long
 ): Parcelable
