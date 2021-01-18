@@ -17,7 +17,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.WorkManager
 import com.example.kenv.trackme.domain.coroutine.CoroutineDispatcherProvider
 import com.example.kenv.trackme.domain.entity.WorkoutEntity
 import com.example.kenv.trackme.domain.transform.toLatLngModel
@@ -67,6 +66,7 @@ class WorkoutRecordingViewModel(
     val startService: LiveData<Unit> = _startService
 
     private lateinit var workoutResult: WorkoutResult
+    private lateinit var latestLocation: Location
 
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
@@ -157,6 +157,7 @@ class WorkoutRecordingViewModel(
         _showFinishButton.postValue(Unit)
     }
 
+    @SuppressLint("MissingPermission")
     fun onRequestPermissionsResult(
         permissions: Array<String>,
         grantResults: IntArray
@@ -164,6 +165,10 @@ class WorkoutRecordingViewModel(
         if (PermissionUtils.isPermissionGranted(permissions, grantResults, NECESSARY_PERMISSION)) {
             isLocationPermissionDenied = false
             requestCurrentLocation()
+            val locationManager = activity.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+            locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)?.let {
+                latestLocation = it
+            }
         } else {
             isLocationPermissionDenied = true
             _permissionDeniedDialog.value = Unit
@@ -173,6 +178,10 @@ class WorkoutRecordingViewModel(
     private fun startRecordingService() {
         if (!isGPSEnabled(activity)) {
             requestEnableLocationSetting()
+            return
+        }
+        if (!::latestLocation.isInitialized) {
+            Toast.makeText(activity, "GPS is not available here", Toast.LENGTH_SHORT).show()
             return
         }
         _startService.value = Unit
