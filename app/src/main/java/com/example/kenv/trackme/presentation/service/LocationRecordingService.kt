@@ -231,7 +231,7 @@ class LocationRecordingService : Service() {
                     WorkoutPendingArgs(distance, seconds.get(), isPause.get())
                 )
             },
-            PendingIntent.FLAG_NO_CREATE
+            PendingIntent.FLAG_UPDATE_CURRENT
         )
         val builder: NotificationCompat.Builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .addAction(
